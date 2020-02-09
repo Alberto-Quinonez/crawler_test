@@ -4,20 +4,16 @@ import application.model.InputPayload;
 import application.service.CrawlerService;
 import application.validator.InputValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.UUID;
 
 @RestController
 public class CrawlerController {
     private static final String BASE_PATH = "/crawler";
     private static final String CRAWL = BASE_PATH + "/crawl";
-    private static final String START = BASE_PATH + "/start";
-    private static final String PROGRESS = BASE_PATH + "/progress";
-    private static final String RESULT = BASE_PATH + "/result";
+    private static final String PROGRESS = BASE_PATH + "/progress/{id}";
+    private static final String RESULT = BASE_PATH + "/result/{id}";
 
     private final CrawlerService service;
     private final InputValidator validator;
@@ -30,25 +26,19 @@ public class CrawlerController {
 
     @PostMapping(value = CRAWL)
     @ResponseBody
-    public List<String> crawl(@RequestBody InputPayload inputPayload) {
-        return service.crawl(validator.validate(inputPayload));
+    public UUID crawl(@RequestBody InputPayload inputPayload, @RequestBody int numThreads) {
+        return service.crawl(validator.validate(inputPayload), numThreads);
     }
 
-    @PostMapping(value = START)
+    @GetMapping(value = PROGRESS)
     @ResponseBody
-    public String startThread(@RequestBody int numberThreads) {
-        return service.startThread(numberThreads);
+    public String getProgress(@PathVariable UUID jobId) {
+        return service.getProgress(jobId);
     }
 
-    @PostMapping(value = PROGRESS)
+    @GetMapping(value = RESULT)
     @ResponseBody
-    public String getProgress(@RequestBody int numberThreads) {
-        return service.startThread(numberThreads);
-    }
-
-    @PostMapping(value = RESULT)
-    @ResponseBody
-    public List<String> startThread(@RequestBody String jobId) {
+    public String getResult(@PathVariable UUID jobId) {
         return service.getResult(jobId);
     }
 

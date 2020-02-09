@@ -1,19 +1,13 @@
 package application.model;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
+@RequiredArgsConstructor
+@Getter
 public class InputPayload {
-    private final String url;
+    private final List<String> urls;
     private final int threadCount;
-
-    public InputPayload(String url, int threadCount) {
-        this.url = url;
-        this.threadCount = threadCount;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public int getThreadCount() {
-        return threadCount;
-    }
 }

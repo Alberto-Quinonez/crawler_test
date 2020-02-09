@@ -3,6 +3,7 @@ package application.validator;
 import application.exception.InvalidThreadCountException;
 import application.exception.InvalidUrlException;
 import application.model.InputPayload;
+import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +25,7 @@ class InputValidatorTest {
     class Validate {
         @Nested
         class GivenValidInput {
-            InputPayload inputPayload = new InputPayload("https://www.google.com/", 1);
+            InputPayload inputPayload = new InputPayload(Lists.newArrayList("https://www.google.com/"), 1);
             InputPayload result;
 
             @BeforeEach
@@ -34,7 +35,7 @@ class InputValidatorTest {
 
             @Test
             void thenResultIsIdentical() {
-                assertThat(result.getUrl()).isEqualTo(inputPayload.getUrl());
+                assertThat(result.getUrls().get(0)).isEqualTo(inputPayload.getUrls().get(0));
                 assertThat(result.getThreadCount()).isEqualTo(inputPayload.getThreadCount());
             }
         }
@@ -42,7 +43,7 @@ class InputValidatorTest {
         @Nested
         class GivenInvalidUrl {
             Throwable throwable;
-            InputPayload inputPayload = new InputPayload("gle.com/", 1);
+            InputPayload inputPayload = new InputPayload(Lists.newArrayList("gle.com/"), 1);
 
             @BeforeEach
             void setup() {
@@ -59,7 +60,7 @@ class InputValidatorTest {
         @Nested
         class GivenInvalidThreadCount {
             Throwable throwable;
-            InputPayload inputPayload = new InputPayload("https://www.google.com/", -1);
+            InputPayload inputPayload = new InputPayload(Lists.newArrayList("https://www.google.com/"), -1);
 
             @BeforeEach
             void setup() {

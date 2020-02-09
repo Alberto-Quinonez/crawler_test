@@ -1,36 +1,45 @@
 package application.service;
 
+import application.cache.CacheSupplier;
+import application.cache.SaveProcess;
 import application.crawler.Crawler;
+import application.job.CrawlJob;
+import application.job.Job;
+import application.job.Status;
 import application.model.InputPayload;
-import application.model.Progress;
+import application.scheduler.CrawlScheduler;
 import com.google.common.collect.Lists;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class CrawlerService {
     private final Crawler crawler;
+    private final CacheSupplier cacheSupplier;
+    private final CrawlScheduler crawlScheduler;
+    private final SaveProcess saveProcess;
 
-    @Autowired
-    public CrawlerService(Crawler crawler) {
-        this.crawler = crawler;
+    public UUID crawl(InputPayload inputPayload, int numThreads) {
+        List<CrawlJob> crawlJobs = Lists.newArrayList();
+        inputPayload.getUrls().forEach(url -> crawlJobs.add(new CrawlJob(url, Lists.newArrayList(), Status.NOT_STARTED)));
+
+        UUID jobId = UUID.randomUUID();
+        Job job = new Job(jobId, crawlJobs);
+
+        saveProcess.save(job);
+        crawlScheduler.schedule(job, numThreads);
+        return jobId;
     }
 
-    public List<String> crawl(InputPayload inputPayload) {
-        return crawler.getImgs(inputPayload.getUrl());
+    public String getProgress(UUID jobId) {
+        return cacheSupplier.get().get(jobId).toString();
     }
 
-    public String startThread(int numThread) {
-        return "jobId1";
-    }
-
-    public Progress getProgress(String jobId) {
-        return new Progress("1", "1");
-    }
-
-    public List<String> getResult(String jobId) {
-        return Lists.newArrayList("1");
+    public String getResult(UUID jobId) {
+        return cacheSupplier.get().get(jobId).getCrawlJobs().toString();
     }
 }
