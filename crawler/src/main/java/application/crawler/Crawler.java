@@ -21,7 +21,6 @@ import java.util.Set;
 @Component
 public class Crawler {
     private static final int MAX_DEPTH = 2;
-    private HashSet<String> visited;
     private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X; de-de) AppleWebKit/523.10.3 (KHTML, like Gecko) Version/3.0.4 Safari/523.10";
 
 
@@ -31,10 +30,10 @@ public class Crawler {
             crawlJob.setStatus(Status.IN_PROGRESS);
 
             //initialize cache
-            visited = Sets.newHashSet();
+            HashSet<String> visited = Sets.newHashSet();
 
             Stopwatch sw = Stopwatch.createStarted();
-            Set<String> results = crawl(crawlJob.getUrl(), 0, crawlJob.getResults());
+            Set<String> results = crawl(crawlJob.getUrl(), 0, crawlJob.getResults(), visited);
             Duration elapsed = sw.stop().elapsed();
             log.info(String.format("Time for crawl: %s", elapsed));
 
@@ -49,9 +48,9 @@ public class Crawler {
         }
     }
 
-    private Set<String> crawl(String URL, int depth, Set<String> results) {
+    private Set<String> crawl(String URL, int depth, Set<String> results, HashSet<String> visited) {
 
-        if(visited.contains(URL) || depth > MAX_DEPTH || URL.isEmpty()){
+        if(checkContinue(URL, depth, visited)){
             return results;
         }
 
@@ -78,7 +77,7 @@ public class Crawler {
 
             for (Element ie : linksOnPage) {
                 log.info(String.format("checking this path: %s", ie.attr("abs:href")));
-                crawl(ie.attr("abs:href"), depth, results);
+                crawl(ie.attr("abs:href"), depth, results, visited);
             }
             return results;
         } catch (UnsupportedMimeTypeException e) {
@@ -90,6 +89,10 @@ public class Crawler {
             return results;
             //throw new RuntimeException("invalid message", e);
         }
+    }
+
+    private boolean checkContinue(String URL, int depth, HashSet<String> visited) {
+        return visited.contains(URL) || depth >= MAX_DEPTH || URL.isEmpty();
     }
 }
 

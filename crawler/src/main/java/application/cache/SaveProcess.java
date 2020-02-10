@@ -16,6 +16,8 @@ public class SaveProcess {
         resultCache.add(job.getId(), job);
     }
 
+    //Decided to use in memory storage, for scalability. For future use we could replace with nosql database.
+
     public static class ResultCache {
         private final ConcurrentHashMap<UUID, Job> map = new ConcurrentHashMap<>();
 
