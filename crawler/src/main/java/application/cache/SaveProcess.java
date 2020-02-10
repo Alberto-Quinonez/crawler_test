@@ -1,22 +1,23 @@
 package application.cache;
 
 import application.job.Job;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component
+@RequiredArgsConstructor
 public class SaveProcess {
-    public ResultCache resultCache;
+    private ResultCache resultCache;
 
-    public Job save (Job job){
+    public void save (Job job){
         resultCache.add(job.getId(), job);
-        return job;
     }
 
     public static class ResultCache {
         private final ConcurrentHashMap<UUID, Job> map = new ConcurrentHashMap<>();
-
-        public ResultCache(){}
 
         public void add(UUID key, Job job) {
             map.put(key, job);
@@ -24,6 +25,10 @@ public class SaveProcess {
 
         public Job get(UUID key) {
             return map.get(key);
+        }
+
+        public boolean has(UUID key) {
+            return map.containsKey(key);
         }
     }
 }

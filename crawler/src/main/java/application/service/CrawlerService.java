@@ -1,45 +1,50 @@
 package application.service;
 
 import application.cache.CacheSupplier;
-import application.cache.SaveProcess;
-import application.crawler.Crawler;
+import application.exception.InvalidJobIdException;
 import application.job.CrawlJob;
 import application.job.Job;
-import application.job.Status;
 import application.model.InputPayload;
+import application.model.ProgressResponse;
+import application.model.ResponseFactory;
+import application.model.ResultResponse;
 import application.scheduler.CrawlScheduler;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class CrawlerService {
-    private final Crawler crawler;
     private final CacheSupplier cacheSupplier;
     private final CrawlScheduler crawlScheduler;
-    private final SaveProcess saveProcess;
+    private final ResponseFactory responseFactory;
 
-    public UUID crawl(InputPayload inputPayload, int numThreads) {
-        List<CrawlJob> crawlJobs = Lists.newArrayList();
-        inputPayload.getUrls().forEach(url -> crawlJobs.add(new CrawlJob(url, Lists.newArrayList(), Status.NOT_STARTED)));
+    public UUID crawl(InputPayload inputPayload) {
+        Set<CrawlJob> crawlJobs = Sets.newHashSet();
+        inputPayload.getUrls().forEach(url -> crawlJobs.add(new CrawlJob(url)));
 
         UUID jobId = UUID.randomUUID();
         Job job = new Job(jobId, crawlJobs);
-
-        saveProcess.save(job);
-        crawlScheduler.schedule(job, numThreads);
+        cacheSupplier.get().add(job.getId(), job);
+        crawlScheduler.schedule(job, inputPayload.getThreadCount());
         return jobId;
     }
 
-    public String getProgress(UUID jobId) {
-        return cacheSupplier.get().get(jobId).toString();
+    public ProgressResponse getProgress(UUID jobId) {
+        if(!cacheSupplier.get().has(jobId)){
+            throw new InvalidJobIdException();
+        }
+        return responseFactory.getProgress(cacheSupplier.get().get(jobId));
     }
 
-    public String getResult(UUID jobId) {
-        return cacheSupplier.get().get(jobId).getCrawlJobs().toString();
+    public ResultResponse getResult(UUID jobId) {
+        if(!cacheSupplier.get().has(jobId)){
+            throw new InvalidJobIdException();
+        }
+        return responseFactory.getResult(cacheSupplier.get().get(jobId));
     }
 }

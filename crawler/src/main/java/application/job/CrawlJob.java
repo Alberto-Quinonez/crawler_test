@@ -1,25 +1,24 @@
 package application.job;
 
-import lombok.AllArgsConstructor;
+import com.google.common.collect.Sets;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
-import java.util.List;
+import java.time.Duration;
+import java.util.Set;
+import java.util.UUID;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Getter
 @Setter
+@ToString
 public class CrawlJob {
+    private final UUID id = UUID.randomUUID();
     private final String url;
-    private List<String> results;
-    private Status status;
-
-    @Override
-    public String toString() {
-        return "CrawlJob{" +
-                "url='" + url + '\'' +
-                ", results=" + results +
-                ", status=" + status +
-                '}';
-    }
+    private Status status = Status.NOT_STARTED;
+    private String timeElapsed = Duration.ZERO.toString();
+    private int resultSize = 0;
+    private Set<String> results = Sets.newHashSet();
 }
