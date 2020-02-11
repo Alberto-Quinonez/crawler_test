@@ -11,30 +11,44 @@ import java.util.UUID;
 
 @Component
 public class ResponseFactory {
-    public ProgressResponse getProgress(Job job) {
+    public ProgressResponse createProgress(Job job) {
         Map<UUID, CrawlJobStatus> map = Maps.newHashMap();
-        int completed = 0;
-        int inProgress = 0;
 
-        for(CrawlJob cj : job.getCrawlJobs()){
-            CrawlJobStatus status = new CrawlJobStatus(cj.getUrl(), cj.getStatus());
-            if(status.getStatus().equals(Status.COMPLETE)) {
-                completed += 1;
+        int notStarted = 0;
+        int inProgress = 0;
+        int completed = 0;
+        int error = 0;
+
+        for (CrawlJob cj : job.getCrawlJobs()) {
+            Status status = cj.getStatus();
+            switch (status) {
+                case NOT_STARTED:
+                    notStarted++;
+                    break;
+                case IN_PROGRESS:
+                    inProgress++;
+                    break;
+                case COMPLETE:
+                    completed++;
+                    break;
+                case ERROR:
+                    error++;
             }
-            if(status.getStatus().equals(Status.IN_PROGRESS)) {
-                inProgress += 1;
-            }
-            map.put(cj.getId(), status);
+
+            map.put(cj.getId(), new CrawlJobStatus(cj.getUrl(), status));
         }
         return ProgressResponse
                 .builder()
-                .completed(completed)
+                .total(map.size())
+                .notStarted(notStarted)
                 .inProgress(inProgress)
-                .map(map)
+                .completed(completed)
+                .error(error)
+                .crawlJobStatusMap(map)
                 .build();
     }
 
-    public ResultResponse getResult(Job job) {
+    public ResultResponse createResult(Job job) {
         return ResultResponse
                 .builder()
                 .crawlJobs(job.getCrawlJobs())

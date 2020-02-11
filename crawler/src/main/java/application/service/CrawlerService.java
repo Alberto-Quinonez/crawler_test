@@ -1,50 +1,37 @@
 package application.service;
 
-import application.cache.CacheSupplier;
-import application.exception.InvalidJobIdException;
+import application.cache.JobsDao;
 import application.job.CrawlJob;
 import application.job.Job;
 import application.model.InputPayload;
-import application.model.ProgressResponse;
-import application.model.ResponseFactory;
-import application.model.ResultResponse;
 import application.scheduler.CrawlScheduler;
-import com.google.common.collect.Sets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class CrawlerService {
-    private final CacheSupplier cacheSupplier;
+    private final JobsDao jobsDao;
     private final CrawlScheduler crawlScheduler;
-    private final ResponseFactory responseFactory;
 
-    public UUID crawl(InputPayload inputPayload) {
-        Set<CrawlJob> crawlJobs = Sets.newHashSet();
-        inputPayload.getUrls().forEach(url -> crawlJobs.add(new CrawlJob(url)));
+    public UUID schedule(InputPayload inputPayload) {
+        Set<CrawlJob> crawlJobs = inputPayload.getUrls().stream()
+                .map(CrawlJob::new)
+                .collect(Collectors.toSet());
 
-        UUID jobId = UUID.randomUUID();
-        Job job = new Job(jobId, crawlJobs);
-        cacheSupplier.get().add(job.getId(), job);
+        Job job = new Job(UUID.randomUUID(), crawlJobs);
+        jobsDao.save(job);
         crawlScheduler.schedule(job, inputPayload.getThreadCount());
-        return jobId;
+
+        return job.getId();
     }
 
-    public ProgressResponse getProgress(UUID jobId) {
-        if(!cacheSupplier.get().has(jobId)){
-            throw new InvalidJobIdException();
-        }
-        return responseFactory.getProgress(cacheSupplier.get().get(jobId));
-    }
-
-    public ResultResponse getResult(UUID jobId) {
-        if(!cacheSupplier.get().has(jobId)){
-            throw new InvalidJobIdException();
-        }
-        return responseFactory.getResult(cacheSupplier.get().get(jobId));
+    public Optional<Job> get(UUID jobId) {
+        return jobsDao.find(jobId);
     }
 }

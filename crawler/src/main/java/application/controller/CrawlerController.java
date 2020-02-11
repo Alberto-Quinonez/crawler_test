@@ -1,10 +1,12 @@
 package application.controller;
 
+import application.exception.InvalidJobIdException;
 import application.model.InputPayload;
+import application.model.ProgressResponse;
+import application.model.ResponseFactory;
+import application.model.ResultResponse;
 import application.service.CrawlerService;
 import application.validator.InputValidator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,32 +14,32 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/crawler")
 public class CrawlerController {
-    private static final String BASE_PATH = "/crawler";
-    private static final String CRAWL = BASE_PATH + "/crawl";
-    private static final String PROGRESS = BASE_PATH + "/progress/{jobId}";
-    private static final String RESULT = BASE_PATH + "/result/{jobId}";
-
     private final CrawlerService service;
     private final InputValidator validator;
-    private final ObjectMapper objectMapper;
+    private final ResponseFactory responseFactory;
 
-    @PostMapping(value = CRAWL)
+    @PostMapping(value = "/crawl")
     @ResponseBody
-    public String crawl(@RequestBody InputPayload inputPayload) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(service.crawl(validator.validate(inputPayload)));
+    public String crawl(@RequestBody InputPayload inputPayload) {
+        return service.schedule(validator.validate(inputPayload)).toString();
     }
 
-    @GetMapping(value = PROGRESS)
+    @GetMapping(value = "/{jobId}/progress")
     @ResponseBody
-    public String getProgress(@PathVariable UUID jobId) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(service.getProgress(jobId));
+    public ProgressResponse getProgress(@PathVariable UUID jobId) {
+        return service.get(jobId)
+                .map(responseFactory::createProgress)
+                .orElseThrow(InvalidJobIdException::new);
     }
 
-    @GetMapping(value = RESULT)
+    @GetMapping(value = "/{jobId}/result")
     @ResponseBody
-    public String getResult(@PathVariable UUID jobId) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(service.getResult(jobId));
+    public ResultResponse getResult(@PathVariable UUID jobId) {
+        return service.get(jobId)
+                .map(responseFactory::createResult)
+                .orElseThrow(InvalidJobIdException::new);
     }
 
 }

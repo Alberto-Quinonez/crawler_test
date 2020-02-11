@@ -11,7 +11,10 @@ import java.util.UUID;
 @Getter
 @Setter
 public class ProgressResponse {
-    private int completed;
+    private int total;
+    private int notStarted;
     private int inProgress;
-    private Map<UUID, CrawlJobStatus> map;
+    private int completed;
+    private int error;
+    private Map<UUID, CrawlJobStatus> crawlJobStatusMap;
 }

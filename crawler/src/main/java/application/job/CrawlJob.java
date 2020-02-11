@@ -1,10 +1,7 @@
 package application.job;
 
-import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 import java.time.Duration;
 import java.util.Set;
@@ -12,13 +9,23 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Getter
-@Setter
-@ToString
 public class CrawlJob {
     private final UUID id = UUID.randomUUID();
     private final String url;
+
     private Status status = Status.NOT_STARTED;
-    private String timeElapsed = Duration.ZERO.toString();
-    private int resultSize = 0;
-    private Set<String> results = Sets.newHashSet();
+    private Duration durationInSeconds;
+    private Integer resultSize;
+    private Set<String> results;
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public void setCompletedValues(Duration timeElapsed, Set<String> results) {
+        this.durationInSeconds = timeElapsed;
+        this.results = results;
+        this.resultSize = results.size();
+        this.status = Status.COMPLETE;
+    }
 }

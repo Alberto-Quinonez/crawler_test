@@ -1,16 +1,16 @@
 package application.job;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import java.util.Set;
 import java.util.UUID;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Getter
 @ToString
 public class Job {
     private final UUID id;
-    private Set<CrawlJob> crawlJobs;
+    private final Set<CrawlJob> crawlJobs;
 }
