@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Response Factory Test")
 class ResponseFactoryTest {
     private ResponseFactory responseFactory;
-    private Job job;
     private CrawlJob crawlJob1;
     private CrawlJob crawlJob2;
     private CrawlJob crawlJob3;

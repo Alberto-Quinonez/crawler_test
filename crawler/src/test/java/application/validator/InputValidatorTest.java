@@ -2,15 +2,19 @@ package application.validator;
 
 import application.exception.InvalidThreadCountException;
 import application.exception.InvalidUrlException;
+import application.exception.MaxThreadCountException;
 import application.model.InputPayload;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.Mockito.when;
 
 @DisplayName("Input Payload Validator Test")
 class InputValidatorTest {
@@ -59,18 +63,44 @@ class InputValidatorTest {
 
         @Nested
         class GivenInvalidThreadCount {
-            Throwable throwable;
-            InputPayload inputPayload = new InputPayload(Lists.newArrayList("https://www.google.com/"), -1);
+            @Nested
+            class GivenNegativeThreadCount {
+                Throwable throwable;
+                InputPayload inputPayload = new InputPayload(Lists.newArrayList("https://www.google.com/"), -1);
 
-            @BeforeEach
-            void setup() {
-                throwable = catchThrowable(() -> validator.validate(inputPayload));
+                @BeforeEach
+                void setup() {
+                    throwable = catchThrowable(() -> validator.validate(inputPayload));
+                }
+
+
+                @Test
+                void thenThrowsInvalidThreadCountException() {
+                    assertThat(throwable).isInstanceOf(InvalidThreadCountException.class);
+                }
             }
+            @Nested
+            class GivenAboveMaxThreadCount {
+                @Mock
+                Runtime runtime;
+
+                Throwable throwable;
+                InputPayload inputPayload = new InputPayload(Lists.newArrayList("https://www.google.com/"), 5);
+
+                @BeforeEach
+                void setup() {
+                    MockitoAnnotations.initMocks(this);
+
+                    when(runtime.availableProcessors()).thenReturn(4);
+
+                    throwable = catchThrowable(() -> validator.validate(inputPayload));
+                }
 
 
-            @Test
-            void thenThrowsInvalidUrlException() {
-                assertThat(throwable).isInstanceOf(InvalidThreadCountException.class);
+                @Test
+                void thenThrowsMaxThreadCountException() {
+                    assertThat(throwable).isInstanceOf(MaxThreadCountException.class);
+                }
             }
         }
     }
