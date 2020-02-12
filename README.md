@@ -1,6 +1,26 @@
 # crawler_test
 
-**Data Model**
+**Goal**
+
+Crawler takes in a url and fetches all the images from the url recursively. 
+User can specify the number of threads for each job, 
+number of threads must a non-negative int and at most equal to number of processors on host machine.
+
+
+**Implementation**
+
+**Controller**
+
+There are 3 exposed rest calls
+
+'Post' /crawler/crawl -- begins crawl job
+
+'Get' /crawler/{jobId}/progress -- retrieves progress
+
+'Get' /crawler/{jobId}/result -- retrieves final results
+
+
+**Data Struct**
  
 Job
 
@@ -12,15 +32,6 @@ InputPayload/Responses
 Here is all the data that is handled on the controller level, all information going in and out
 Coming in is the list of urls + number of threads (InputPayload)
 Going out is the status and progress on each job (ProgressResponse) and the results (ResultResponse)
-
-
-**Controller**
-
-There are 3 exposed rest calls
-
-'Post' /crawler/crawl -- begins crawl job
-'Get' /crawler/{jobId}/progress -- retrieves progress
-'Get' /crawler/{jobId}/result -- retrieves final results
 
 **Service**
 
