@@ -1,6 +1,7 @@
 package application.scheduler;
 
-import application.crawler.Crawler;
+import application.crawler.CrawlerManager;
+import application.crawler.DocumentConnector;
 import application.job.CrawlJob;
 import application.job.Job;
 import application.job.Status;
@@ -18,31 +19,28 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 @RequiredArgsConstructor
 @Component
 public class CrawlScheduler {
+    private final static int MAX_CONCURRENT_JOB = 1;
     private final static String CRAWL_JOB_THREAD_NAME = "CrawlerScheduler-%d";
     private final static String CRAWL_JOB_FAILURE_FORMAT = "Unable to complete crawl job for url: %s";
+    private ExecutorService executorService;
 
-    private final Crawler crawler;
-
-    //Normally we would have a constantly running threadpool, and would re-use the threads.
-    // I would select a number of threads based on logical processors of current machine.
-    //This implementation is technically more heavy since its expensive to spawn a new thread for each request.
-    public void schedule(Job job, int numThreads) {
-        log.info(String.format("Creating thread pool with %s threads", numThreads));
-        ExecutorService executorService = newFixedThreadPool(numThreads, createThreadFactory());
-
-        job.getCrawlJobs()
-                .stream()
-                .map(this::createRunnableCrawl)
-                .forEach(executorService::submit);
-
-        //Orderly shutdown, no new jobs accepted
-        executorService.shutdown();
+    public void init() {
+        log.info(String.format("Creating thread pool with %s threads", MAX_CONCURRENT_JOB));
+        executorService = newFixedThreadPool(MAX_CONCURRENT_JOB, createThreadFactory());
     }
 
-    private Runnable createRunnableCrawl(CrawlJob crawlJob) {
+    public void schedule(Job job, int numThreads) {
+        job.getCrawlJobs()
+                .stream()
+                .map(crawlJob -> createRunnableCrawl(crawlJob, numThreads))
+                .forEach(executorService::submit);
+    }
+
+    private Runnable createRunnableCrawl(CrawlJob crawlJob, int numThreads) {
         return () -> {
             try {
-                crawler.getImages(crawlJob);
+                CrawlerManager manager = new CrawlerManager(new DocumentConnector());
+                manager.startCrawlJob(crawlJob, numThreads);
             } catch (Exception e) {
                 log.error(String.format(CRAWL_JOB_FAILURE_FORMAT, crawlJob.getUrl()), e);
                 crawlJob.setStatus(Status.ERROR);

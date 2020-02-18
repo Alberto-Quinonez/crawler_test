@@ -8,6 +8,7 @@ import application.scheduler.CrawlScheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -18,6 +19,12 @@ import java.util.stream.Collectors;
 public class CrawlerService {
     private final JobsDao jobsDao;
     private final CrawlScheduler crawlScheduler;
+
+    @SuppressWarnings("unused")
+    @PostConstruct
+    protected void init() {
+        crawlScheduler.init();
+    }
 
     public UUID schedule(InputPayload inputPayload) {
         Set<CrawlJob> crawlJobs = inputPayload.getUrls().stream()
