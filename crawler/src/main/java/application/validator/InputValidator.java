@@ -15,7 +15,7 @@ public class InputValidator {
             throw new InvalidThreadCountException();
         }
 
-        if (inputPayload.getThreadCount() > Runtime.getRuntime().availableProcessors()) {
+        if (inputPayload.getThreadCount() > 20) {
             throw new MaxThreadCountException();
         }
 

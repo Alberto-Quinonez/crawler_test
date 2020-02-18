@@ -19,7 +19,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 @RequiredArgsConstructor
 @Component
 public class CrawlScheduler {
-    private final static int MAX_CONCURRENT_JOB = 1;
+    private final static int MAX_CONCURRENT_JOB = 4;
     private final static String CRAWL_JOB_THREAD_NAME = "CrawlerScheduler-%d";
     private final static String CRAWL_JOB_FAILURE_FORMAT = "Unable to complete crawl job for url: %s";
     private ExecutorService executorService;

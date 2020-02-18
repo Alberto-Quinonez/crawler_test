@@ -9,21 +9,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.concurrent.Executors.newFixedThreadPool;
+import java.util.concurrent.*;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CrawlerManager {
     private static final int MAX_DEPTH = 2;
-    private final static String CRAWL_JOB_THREAD_NAME = "CrawlerScheduler-%d";
+    private final static String CRAWL_JOB_THREAD_NAME = "CrawlerManager-%d";
     private final DocumentConnector documentConnector;
-
     private ConcurrentHashMap<String, Boolean> results;
     private ConcurrentHashMap<String, Boolean> visited;
 
@@ -32,32 +26,21 @@ public class CrawlerManager {
         log.info(String.format("Starting crawl for url: %s", crawlJob.getUrl()));
         crawlJob.setStatus(Status.IN_PROGRESS);
 
-        try {
-            ExecutorService crawlPool = newFixedThreadPool(numThreads, createThreadFactory());
-            //initialize shared cache
-            visited = new ConcurrentHashMap<>();
-            //initialize shared results
-            results = new ConcurrentHashMap<>();
+        ThreadPoolExecutor crawlPool = new ThreadPoolExecutor(numThreads, numThreads,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(), createThreadFactory());
 
-            Stopwatch sw = Stopwatch.createStarted();
+        //initialize shared cache
+        visited = new ConcurrentHashMap<>();
+        //initialize shared results
+        results = new ConcurrentHashMap<>();
 
-            crawlPool.submit(new CrawlerRunnable(
-                    crawlJob.getUrl(),
-                    crawlPool,
-                    documentConnector,
-                    0,
-                    results,
-                    visited
-            ));
-            crawlPool.awaitTermination(30, TimeUnit.SECONDS);
-            Duration elapsed = sw.stop().elapsed();
-            log.info(String.format("Time for crawl: %s", elapsed));
+        Stopwatch sw = Stopwatch.createStarted();
 
-            crawlJob.setCompletedValues(elapsed, results.keySet());
-        } catch (InterruptedException ie){
-            log.error(String.format("Error interruption during crawl %s", ie));
-            crawlJob.setStatus(Status.ERROR);
-        }
+        new Crawler(documentConnector).crawl(crawlJob.getUrl(), MAX_DEPTH, visited, results, crawlPool);
+        Duration elapsed = sw.stop().elapsed();
+        log.info(String.format("Time for crawl: %s", elapsed));
+        crawlJob.setCompletedValues(elapsed, results.keySet());
     }
 
 
