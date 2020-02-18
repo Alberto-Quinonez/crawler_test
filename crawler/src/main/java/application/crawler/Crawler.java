@@ -58,7 +58,7 @@ class Crawler {
             ConcurrentHashMap<String, Boolean> visited,
             ConcurrentHashMap<String, Boolean> results) {
         return doc -> {
-            if(!doc.isPresent() || doc.get().baseUri().isEmpty() || visited.containsKey(doc.get().baseUri())){
+            if(!shouldVisit(doc, visited)){
                 return Sets.newHashSet();
             }
             String url = doc.get().baseUri();
@@ -84,5 +84,18 @@ class Crawler {
             ConcurrentHashMap<String, Boolean> results,
             ThreadPoolExecutor executor) {
         return urls -> urls.stream().map(url -> crawl(url, depth - 1, visited, results, executor));
+    }
+
+    private boolean shouldVisit(Optional<Document> document, ConcurrentHashMap<String, Boolean> visited) {
+        if(!document.isPresent()){
+            return false;
+        }
+        if(document.get().baseUri().isEmpty()){
+           return false;
+        }
+        if(visited.containsKey(document.get().baseUri())){
+            return false;
+        }
+        return true;
     }
 }
