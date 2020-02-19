@@ -9,12 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.mockito.Mockito.when;
 
 @DisplayName("Input Payload Validator Test")
 class InputValidatorTest {
@@ -81,21 +78,13 @@ class InputValidatorTest {
             }
             @Nested
             class GivenAboveMaxThreadCount {
-                @Mock
-                Runtime runtime;
-
                 Throwable throwable;
-                InputPayload inputPayload = new InputPayload(Lists.newArrayList("https://www.google.com/"), 5);
+                InputPayload inputPayload = new InputPayload(Lists.newArrayList("https://www.google.com/"), 40);
 
                 @BeforeEach
                 void setup() {
-                    MockitoAnnotations.initMocks(this);
-
-                    when(runtime.availableProcessors()).thenReturn(4);
-
                     throwable = catchThrowable(() -> validator.validate(inputPayload));
                 }
-
 
                 @Test
                 void thenThrowsMaxThreadCountException() {
