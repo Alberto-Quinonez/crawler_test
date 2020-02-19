@@ -15,9 +15,16 @@ There are 3 exposed rest calls
 
 'Post' /crawler/crawl -- begins crawl job
 
+body: {
+        "urls" : ["http://4chan.org", "https://yahoo.fr"],
+      	"threadCount": 4	
+      }
+
 'Get' /crawler/{jobId}/progress -- retrieves progress
 
 'Get' /crawler/{jobId}/result -- retrieves final results
+
+
 
 
 **Data Struct**
@@ -47,33 +54,19 @@ this application is more suited for ad-hoc data retrieval.
 
 There is a DAO interface that can be still expanded to use a nosql db in the future
 
-**Threading**
+**Threading/Crawl**
 
-For the multithreaded solution I opted for a simple threadpool that is created at request time.
-We then submit each of the crawljobs as a runnable and order a shutdown of threadbool 
-when the jobs are all done.
+For the multithreaded solution there is an scheduling threadpool which handles concurrent crawl jobs.
+There is a current arbitrary max of 4 concurrent jobs at once.
 
-Ideally for performance we would have a threadpool created on startup, and we could re-use the threads when idle.
-This would have a good overhead savings on thread creation.
+For each request we create another threadpool at request time. 
+This will be used for the recursive calls until all threads are used, then the following recursive call wait for resources.
 
 
-**Crawler**
+A good way to further optimize this approach is to split the crawl into 2 phases IO and parsing.
+We would have 2 independent threadpool's for each. 
 
-When the Crawler starts a Crawl, 
-it will setup timers for benchmarks, 
-initialize a visited cache, initialize the results list and start the crawl call (which is recursive)
-
-the visited cache serves to keep track of which links have been visited, to avoid wasteful re-visiting of the same link
-the results list is to hold the results as they are being gathered.
-
-the return state for the recursive function is checking the 3 conditions
-
-    - have we visited this url before? if yes return
-    - have we gotten to depth 2? if yes return
-    - if url is empty, then return
-
-Otherwise we get a list of all links on a page, 
-visit all those links, 
-grab all of the images, and increment depth, repeat
+We would have more IO threads grabbing links and feeding it into a queue where the smaller number of parse threads would be taking jobs from the queue.
+Most of the time loss is due to IO so this would give a net speedup.
 
 
